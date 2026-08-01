@@ -1,5 +1,9 @@
+export const runtime = "edge";
+
 import { NextRequest, NextResponse } from "next/server";
+
 import { executeTask } from "@/lib/agent/executor";
+
 import { verifyResults } from "@/lib/agent/verifier";
 
 export async function POST(req: NextRequest) {

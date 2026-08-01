@@ -1,5 +1,9 @@
+export const runtime = "edge";
+
 import { NextRequest, NextResponse } from "next/server";
+
 import { analyzeRepository, getFileContent } from "@/lib/tools/github";
+
 
 export async function POST(req: NextRequest) {
   try {

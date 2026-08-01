@@ -1,4 +1,7 @@
+export const runtime = "edge";
+
 import { NextResponse } from "next/server";
+
 
 // In production, this would fetch from a database (Supabase/PostgreSQL)
 // For MVP, events are stored in-memory on the client side via Zustand
