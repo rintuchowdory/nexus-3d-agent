@@ -1,7 +1,4 @@
 name = "nexus-3d-agent"
 compatibility_date = "2025-01-01"
 compatibility_flags = ["nodejs_compat"]
-pages_build_output_dir = ".vercel/output"
-
-[build]
-command = "npx @cloudflare/next-on-pages"
+pages_build_output_dir = ".vercel/output/static"
