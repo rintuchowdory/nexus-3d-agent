@@ -1,46 +1,10 @@
-export const runtime = "edge";
-
-import { NextRequest, NextResponse } from "next/server";
-
-import { executeTask } from "@/lib/agent/executor";
-
-import { verifyResults } from "@/lib/agent/verifier";
-
-export async function POST(req: NextRequest) {
-  try {
-    const { instruction } = await req.json();
-
-    if (!instruction || typeof instruction !== "string") {
-      return NextResponse.json(
-        { error: "instruction is required" },
-        { status: 400 }
-      );
-    }
-
-    const githubToken = process.env.GITHUB_TOKEN;
-    const result = await executeTask(instruction, { githubToken });
-    const verification = verifyResults(result.events);
-
-    return NextResponse.json({
-      response: result.response,
-      events: result.events,
-      verification,
-      metrics: result.metrics,
-    });
-  } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
-    );
-  }
+export const dynamic = "force-static";
+export function GET() {
+  return Response.json({ status: "ok", message: "NEXUS-3D API — static mode" });
 }
-
-export async function GET() {
-  return NextResponse.json({
-    status: "ok",
-    message: "NEXUS-3D Agent API",
-    endpoints: {
-      POST: "Send instruction in body: { instruction: string }",
-    },
+export function POST() {
+  return Response.json({ 
+    response: "NEXUS-3D is running in static mode. Deploy with `output: standalone` for full AI agent capabilities.",
+    steps: [{ action: "static_mode", status: "info" }]
   });
 }
