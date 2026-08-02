@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
     }
     const result = await routeTask(message);
     return NextResponse.json(result);
-  } catch (error: {
+  } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 }
