@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "name": "nexus-3d-agent",
+  "buildCommand": "npm install --legacy-peer-deps && npm run build",
+  "framework": "nextjs",
+  "env": {
+    "GROQ_API_KEY": "@groq-api-key",
+    "GITHUB_TOKEN": "@github-token"
+  }
+}
