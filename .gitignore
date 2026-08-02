@@ -31,4 +31,3 @@ next-env.d.ts
 
 # Cloudflare build artifacts
 .vercel/
-.npmrc
