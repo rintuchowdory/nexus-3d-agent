@@ -11,8 +11,8 @@
     "deploy:cf": "npx @cloudflare/next-on-pages && npx wrangler pages deploy .vercel/output --project-name nexus-3d-agent --branch main"
   },
   "dependencies": {
-    "@react-three/drei": "^9.122.0",
-    "@react-three/fiber": "^8.17.10",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.7.0",
     "@types/node": "^20",
     "@types/react": "19.0.0",
     "@types/react-dom": "19.0.0",
