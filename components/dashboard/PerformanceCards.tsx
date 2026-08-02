@@ -1,7 +1,7 @@
 "use client";
 
-import { useAgentStore } from "@/lib/store/agent-store";
-import { formatDuration, formatCost } from "@/lib/utils";
+import { useAgentStore } from "../../lib/store/agent-store";
+import { formatDuration, formatCost } from "../../lib/utils";
 import { Clock, Hash, DollarSign, CheckCircle2, XCircle } from "lucide-react";
 
 export function PerformanceCards() {

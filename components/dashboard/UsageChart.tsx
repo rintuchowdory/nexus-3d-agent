@@ -1,6 +1,6 @@
 "use client";
 
-import { useAgentStore } from "@/lib/store/agent-store";
+import { useAgentStore } from "../../lib/store/agent-store";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts";

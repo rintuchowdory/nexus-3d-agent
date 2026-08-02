@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { routeTask } from "@/lib/agent/router";
+import { routeTask } from "../../../lib/agent/router";
 
 export const runtime = "nodejs";
 

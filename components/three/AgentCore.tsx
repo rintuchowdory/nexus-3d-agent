@@ -3,7 +3,7 @@
 import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import type { AgentStatus } from "@/types/agent-events";
+import type { AgentStatus } from "../../types/agent-events";
 
 const STATUS_COLORS: Record<AgentStatus, string> = {
   idle: "#00D9FF",

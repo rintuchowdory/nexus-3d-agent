@@ -1,6 +1,6 @@
-import type { AgentEvent, ToolType } from "@/types/agent-events";
-import { analyzeRepository, getFileContent } from "@/lib/tools/github";
-import { analyzeDockerfile, analyzeDockerCompose } from "@/lib/tools/docker";
+import type { AgentEvent, ToolType } from "../../types/agent-events";
+import { analyzeRepository, getFileContent } from "../../lib/tools/github";
+import { analyzeDockerfile, analyzeDockerCompose } from "../../lib/tools/docker";
 import { routeTask, type RouteResult } from "./router";
 
 export interface ExecutionResult {

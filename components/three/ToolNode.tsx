@@ -4,7 +4,7 @@ import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Text, Octahedron, Box, Cylinder } from "@react-three/drei";
 import * as THREE from "three";
-import type { ToolType, AgentStatus } from "@/types/agent-events";
+import type { ToolType, AgentStatus } from "../../types/agent-events";
 
 interface ToolNodeProps {
   type: ToolType;

@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { executeTask } from "@/lib/agent/executor";
+import { executeTask } from "../../../../lib/agent/executor";
 
 export const runtime = "nodejs";
 

@@ -1,7 +1,7 @@
 "use client";
 
-import { useAgentStore } from "@/lib/store/agent-store";
-import type { AgentStatus } from "@/types/agent-events";
+import { useAgentStore } from "../../lib/store/agent-store";
+import type { AgentStatus } from "../../types/agent-events";
 
 const STATUS_CONFIG: Record<AgentStatus, { color: string; label: string; dot: string }> = {
   idle: { color: "text-nexus-muted", label: "IDLE", dot: "bg-nexus-muted" },

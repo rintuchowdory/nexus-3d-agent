@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useAgentStore } from "@/lib/store/agent-store";
-import { executeTask } from "@/lib/agent/executor";
+import { useAgentStore } from "../../lib/store/agent-store";
+import { executeTask } from "../../lib/agent/executor";
 import { Send, Loader2, Sparkles } from "lucide-react";
 
 export function AgentChat() {

@@ -1,9 +1,9 @@
 "use client";
 
-import { useAgentStore } from "@/lib/store/agent-store";
-import { formatDuration } from "@/lib/utils";
+import { useAgentStore } from "../../lib/store/agent-store";
+import { formatDuration } from "../../lib/utils";
 import { CheckCircle2, XCircle, Loader2, Circle, Brain } from "lucide-react";
-import type { AgentEvent } from "@/types/agent-events";
+import type { AgentEvent } from "../../types/agent-events";
 
 const EVENT_ICONS = {
   plan: Brain,

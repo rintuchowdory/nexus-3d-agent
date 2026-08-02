@@ -5,7 +5,7 @@ import type {
   ToolType,
   PerformanceMetrics,
   ChatMessage,
-} from "@/types/agent-events";
+} from "../../types/agent-events";
 
 interface AgentState {
   status: AgentStatus;

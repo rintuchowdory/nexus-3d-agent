@@ -1,4 +1,4 @@
-import type { ToolType } from "@/types/agent-events";
+import type { ToolType } from "../../types/agent-events";
 
 export interface RouteResult {
   tool: ToolType;

@@ -5,8 +5,8 @@ import { OrbitControls, Stars, Environment } from "@react-three/drei";
 import { AgentCore } from "./AgentCore";
 import { ToolNode } from "./ToolNode";
 import { ConnectionBeam } from "./ConnectionBeam";
-import type { ToolType, AgentStatus } from "@/types/agent-events";
-import { useAgentStore } from "@/lib/store/agent-store";
+import type { ToolType, AgentStatus } from "../../types/agent-events";
+import { useAgentStore } from "../../lib/store/agent-store";
 
 const TOOLS: { type: ToolType; label: string; position: [number, number, number] }[] = [
   { type: "github", label: "GitHub", position: [4, 1.5, -1] },

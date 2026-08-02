@@ -1,4 +1,4 @@
-import type { AgentEvent } from "@/types/agent-events";
+import type { AgentEvent } from "../../types/agent-events";
 
 export function verifyResults(events: AgentEvent[]): {
   allPassed: boolean;
