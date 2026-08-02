@@ -1,16 +1,16 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { AgentChat } from "@/components/agent-chat/AgentChat";
-import { ExecutionTimeline } from "@/components/dashboard/ExecutionTimeline";
-import { PerformanceCards } from "@/components/dashboard/PerformanceCards";
-import { StatusBar } from "@/components/dashboard/StatusBar";
-import { UsageChart } from "@/components/dashboard/UsageChart";
+import { AgentChat } from "../../components/agent-chat/AgentChat";
+import { ExecutionTimeline } from "../../components/dashboard/ExecutionTimeline";
+import { PerformanceCards } from "../../components/dashboard/PerformanceCards";
+import { StatusBar } from "../../components/dashboard/StatusBar";
+import { UsageChart } from "../../components/dashboard/UsageChart";
 import { Suspense } from "react";
 
 // Dynamically import 3D scene to avoid SSR issues
 const AgentScene = dynamic(
-  () => import("@/components/three/AgentScene").then((m) => m.AgentScene),
+  () => import("../../components/three/AgentScene").then((m) => m.AgentScene),
   {
     ssr: false,
     loading: () => (

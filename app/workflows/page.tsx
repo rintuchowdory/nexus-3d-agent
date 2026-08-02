@@ -1,6 +1,6 @@
 "use client";
 
-import { WorkflowEditor } from "@/components/workflow-editor/WorkflowEditor";
+import { WorkflowEditor } from "../../components/workflow-editor/WorkflowEditor";
 import { useState } from "react";
 import { Save, Play, Plus, Github, Search, FileCode, Cloud, Database } from "lucide-react";
 
