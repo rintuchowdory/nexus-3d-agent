@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: nexus-3d-agent
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm install --legacy-peer-deps && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_VERSION
+        value: 18.20.8
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GITHUB_TOKEN
+        sync: false
+    healthCheckPath: /
+    autoDeploy: true
