@@ -11,7 +11,7 @@ services:
         value: 18.20.8
       - key: GROQ_API_KEY
         sync: false
-      - key: GITHUB_TOKEN
-        sync: false
+      - key: GROQ_MODEL
+        value: llama-3.3-70b-versatile
     healthCheckPath: /
     autoDeploy: true
