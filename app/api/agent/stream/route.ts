@@ -3,7 +3,6 @@ import { streamGroq, GROQ_SYSTEM_PROMPT } from "../../../../lib/llm/groq";
 import { routeTask } from "../../../../lib/agent/router";
 
 export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,13 +18,11 @@ export async function POST(req: NextRequest) {
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          // Send routing info first
           const routes = routeTask(message);
           controller.enqueue(encoder.encode(
             `data: ${JSON.stringify({ type: "routes", routes })}\n\n`
           ));
 
-          // Stream LLM response via Groq
           try {
             let fullResponse = "";
             for await (const chunk of streamGroq([
@@ -38,11 +35,10 @@ export async function POST(req: NextRequest) {
               ));
             }
             controller.enqueue(encoder.encode(
-              `data: ${JSON.stringify({ type: "complete", response: fullResponse, model: process.env.GROQ_MODEL || "llama-3.3-70b-versatile" })}\n\n`
+              `data: ${JSON.stringify({ type: "complete", response: fullResponse })}\n\n`
             ));
           } catch (llmError) {
-            // Fallback to mock
-            const mockResponse = `[Mock Mode] Routed "${message}" to: ${routes.map(r => r.tool).join(", ")}. LLM Error: ${llmError instanceof Error ? llmError.message : "unknown"}`;
+            const mockResponse = `[Mock Mode] Routed "${message}" to: ${routes.map(r => r.tool).join(", ")}. Error: ${llmError instanceof Error ? llmError.message : "unknown"}`;
             controller.enqueue(encoder.encode(
               `data: ${JSON.stringify({ type: "token", content: mockResponse })}\n\n`
             ));

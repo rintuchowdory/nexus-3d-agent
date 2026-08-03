@@ -3,7 +3,6 @@ import { routeTask } from "../../../lib/agent/router";
 import { callGroq, GROQ_SYSTEM_PROMPT } from "../../../lib/llm/groq";
 
 export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,18 +11,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Message is required" }, { status: 400 });
     }
 
-    // Route to determine which tools are relevant
     const routes = routeTask(message);
 
-    // Generate real LLM response via Groq
     let response: string;
+    let powered = "mock";
     try {
       response = await callGroq([
         { role: "system", content: GROQ_SYSTEM_PROMPT },
         { role: "user", content: message },
       ], { maxTokens: 2048 });
+      powered = "groq";
     } catch (llmError) {
-      // Fallback to mock if Groq isn't configured
       response = `[Mock Mode] I would analyze your request: "${message}". ` +
         `Routed to: ${routes.map(r => `${r.tool}(${r.action})`).join(", ")}. ` +
         `LLM Error: ${llmError instanceof Error ? llmError.message : "unknown"}`;
@@ -33,7 +31,7 @@ export async function POST(req: NextRequest) {
       response,
       routes,
       model: process.env.GROQ_MODEL || "llama-3.3-70b-versatile",
-      powered: "groq",
+      powered,
     });
   } catch (error) {
     return NextResponse.json(
