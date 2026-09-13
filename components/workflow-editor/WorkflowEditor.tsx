@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, DragEvent } from "react";
+import { useCallback } from "react";
 import ReactFlow, {
   Background,
   Controls,
@@ -9,70 +9,53 @@ import ReactFlow, {
   applyNodeChanges,
   applyEdgeChanges,
   type Node,
-  type Edge,
-  type OnNodesChange,
-  type OnEdgesChange,
-  type OnConnect,
   type NodeTypes,
 } from "reactflow";
 import "reactflow/dist/style.css";
+import { useWorkflowStore, type NodeRunState } from "../../lib/store/workflow-store";
 
 const nodeTypes: NodeTypes = {
   agent: AgentNode,
-  tool: ToolNode as any,
+  tool: ToolNode,
   input: InputNode,
   output: OutputNode,
 };
 
-const initialNodes: Node[] = [
-  { id: "input", type: "input", position: { x: 100, y: 50 }, data: { label: "User Input" } },
-  { id: "router", type: "agent", position: { x: 300, y: 50 }, data: { label: "Task Router" } },
-  { id: "github", type: "tool", position: { x: 500, y: 0 }, data: { label: "GitHub Agent" } },
-  { id: "research", type: "tool", position: { x: 500, y: 120 }, data: { label: "Web Research" } },
-  { id: "verifier", type: "agent", position: { x: 700, y: 60 }, data: { label: "Verification Agent" } },
-  { id: "output", type: "output", position: { x: 900, y: 60 }, data: { label: "Final Answer" } },
-];
-
-const initialEdges: Edge[] = [
-  { id: "e-input-router", source: "input", target: "router", animated: true },
-  { id: "e-router-github", source: "router", target: "github", animated: true },
-  { id: "e-router-research", source: "router", target: "research", animated: true },
-  { id: "e-github-verifier", source: "github", target: "verifier", animated: true },
-  { id: "e-research-verifier", source: "research", target: "verifier", animated: true },
-  { id: "e-verifier-output", source: "verifier", target: "output", animated: true },
-];
-
 export function WorkflowEditor() {
-  const [nodes, setNodes] = useState<Node[]>(initialNodes);
-  const [edges, setEdges] = useState<Edge[]>(initialEdges);
-  const rfRef = useRef<HTMLDivElement>(null);
+  const nodes = useWorkflowStore((s) => s.nodes);
+  const edges = useWorkflowStore((s) => s.edges);
+  const onNodesChange = useWorkflowStore((s) => s.onNodesChange);
+  const onEdgesChange = useWorkflowStore((s) => s.onEdgesChange);
+  const onConnect = useWorkflowStore((s) => s.onConnect);
 
-  const onNodesChange: OnNodesChange = useCallback(
-    (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
-    []
+  const handleNodesChange = useCallback(
+    (changes: any) => onNodesChange(changes),
+    [onNodesChange]
   );
-  const onEdgesChange: OnEdgesChange = useCallback(
-    (changes) => setEdges((eds) => applyEdgeChanges(changes, eds)),
-    []
+  const handleEdgesChange = useCallback(
+    (changes: any) => onEdgesChange(changes),
+    [onEdgesChange]
   );
-  const onConnect: OnConnect = useCallback(
-    (connection) => setEdges((eds) => addEdge({ ...connection, animated: true }, eds)),
-    []
+  const handleConnect = useCallback(
+    (connection: any) => onConnect(connection),
+    [onConnect]
   );
 
   return (
     <div className="w-full h-full bg-nexus-panel border border-nexus-border rounded-xl overflow-hidden">
-      <div className="px-4 py-2 border-b border-nexus-border">
+      <div className="px-4 py-2 border-b border-nexus-border flex items-center justify-between">
         <span className="font-mono text-sm text-nexus-text">Workflow Editor</span>
+        <span className="font-mono text-[10px] text-nexus-muted">
+          drag nodes · connect edges · run executes left-to-right
+        </span>
       </div>
       <div style={{ height: "calc(100% - 40px)" }}>
         <ReactFlow
-          ref={rfRef as any}
           nodes={nodes}
           edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
+          onNodesChange={handleNodesChange}
+          onEdgesChange={handleEdgesChange}
+          onConnect={handleConnect}
           nodeTypes={nodeTypes}
           fitView
           defaultEdgeOptions={{
@@ -101,36 +84,69 @@ export function WorkflowEditor() {
   );
 }
 
-function AgentNode({ data }: { data: { label: string } }) {
+function useNodeStatus(id: string): NodeRunState {
+  return useWorkflowStore((s) => s.nodeStates[id] ?? "idle");
+}
+
+const statusRing: Record<NodeRunState, string> = {
+  idle: "",
+  active: "ring-2 ring-nexus-accent shadow-[0_0_18px_rgba(0,217,255,0.45)]",
+  completed: "ring-2 ring-nexus-success/70",
+  failed: "ring-2 ring-red-500/70",
+};
+
+const statusDot: Record<NodeRunState, string> = {
+  idle: "bg-nexus-muted",
+  active: "bg-nexus-accent animate-pulse",
+  completed: "bg-nexus-success",
+  failed: "bg-red-500",
+};
+
+function AgentNode({ id, data }: { id: string; data: { label: string } }) {
+  const status = useNodeStatus(id);
   return (
-    <div className="px-4 py-2 rounded-lg bg-nexus-panel border border-nexus-accent/40 shadow-lg">
+    <div
+      className={`px-4 py-2 rounded-lg bg-nexus-panel border border-nexus-accent/40 shadow-lg transition-all ${statusRing[status]}`}
+    >
       <div className="flex items-center gap-2">
-        <span className="w-2 h-2 rounded-full bg-nexus-accent animate-pulse" />
+        <span className={`w-2 h-2 rounded-full ${statusDot[status]}`} />
         <span className="font-mono text-xs text-nexus-text">{data.label}</span>
       </div>
     </div>
   );
 }
 
-function ToolNode({ data }: { data: { label: string } }) {
+function ToolNode({ id, data }: { id: string; data: { label: string } }) {
+  const status = useNodeStatus(id);
   return (
-    <div className="px-3 py-1.5 rounded-md bg-nexus-border/40 border border-nexus-border">
-      <span className="font-mono text-[10px] text-nexus-muted">{data.label}</span>
+    <div
+      className={`px-3 py-1.5 rounded-md bg-nexus-border/40 border border-nexus-border transition-all ${statusRing[status]}`}
+    >
+      <div className="flex items-center gap-2">
+        <span className={`w-1.5 h-1.5 rounded-full ${statusDot[status]}`} />
+        <span className="font-mono text-[10px] text-nexus-muted">{data.label}</span>
+      </div>
     </div>
   );
 }
 
-function InputNode({ data }: { data: { label: string } }) {
+function InputNode({ id, data }: { id: string; data: { label: string } }) {
+  const status = useNodeStatus(id);
   return (
-    <div className="px-4 py-2 rounded-lg bg-nexus-success/10 border border-nexus-success/40">
+    <div
+      className={`px-4 py-2 rounded-lg bg-nexus-success/10 border border-nexus-success/40 transition-all ${statusRing[status]}`}
+    >
       <span className="font-mono text-xs text-nexus-success">{data.label}</span>
     </div>
   );
 }
 
-function OutputNode({ data }: { data: { label: string } }) {
+function OutputNode({ id, data }: { id: string; data: { label: string } }) {
+  const status = useNodeStatus(id);
   return (
-    <div className="px-4 py-2 rounded-lg bg-nexus-warning/10 border border-nexus-warning/40">
+    <div
+      className={`px-4 py-2 rounded-lg bg-nexus-warning/10 border border-nexus-warning/40 transition-all ${statusRing[status]}`}
+    >
       <span className="font-mono text-xs text-nexus-warning">{data.label}</span>
     </div>
   );
