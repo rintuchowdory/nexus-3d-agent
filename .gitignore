@@ -31,3 +31,5 @@ next-env.d.ts
 
 # Cloudflare build artifacts
 .vercel/
+.vercel
+.env*
