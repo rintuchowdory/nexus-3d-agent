@@ -1,7 +1,7 @@
 "use client";
 
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Stars, Environment } from "@react-three/drei";
+import { OrbitControls, Stars } from "@react-three/drei";
 import { AgentCore } from "./AgentCore";
 import { ToolNode } from "./ToolNode";
 import { ConnectionBeam } from "./ConnectionBeam";

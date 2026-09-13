@@ -5,7 +5,7 @@ import { formatDuration, formatCost } from "../../lib/utils";
 import { Clock, Hash, DollarSign, CheckCircle2, XCircle } from "lucide-react";
 
 export function PerformanceCards() {
-  const { metrics } = useAgentStore();
+  const metrics = useAgentStore((s) => s.metrics);
 
   const cards = [
     { label: "Response Time", value: formatDuration(metrics.responseTime), icon: Clock, color: "text-nexus-accent" },

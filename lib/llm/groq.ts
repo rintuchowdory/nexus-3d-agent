@@ -1,5 +1,5 @@
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
-const GROQ_MODEL = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
+const GROQ_MODEL = process.env.GROQ_MODEL || "qwen/qwen3.8-27b";
 
 export interface GroqMessage {
   role: "system" | "user" | "assistant";
@@ -73,27 +73,44 @@ export async function* streamGroq(
   const decoder = new TextDecoder();
   let buffer = "";
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
+  const yieldDelta = function* (data: string): Generator<string> {
+    try {
+      const parsed = JSON.parse(data);
+      const delta = parsed.choices?.[0]?.delta?.content;
+      if (delta) yield delta;
+    } catch {
+      // skip invalid lines
+    }
+  };
 
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split("\n");
-    buffer = lines.pop() || "";
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
 
-    for (const line of lines) {
-      if (line.startsWith("data: ")) {
-        const data = line.slice(6);
-        if (data === "[DONE]") return;
-        try {
-          const parsed = JSON.parse(data);
-          const delta = parsed.choices?.[0]?.delta?.content;
-          if (delta) yield delta;
-        } catch {
-          // skip invalid lines
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
+
+      for (const rawLine of lines) {
+        const line = rawLine.trim(); // handle CRLF streams
+        if (line.startsWith("data: ")) {
+          const data = line.slice(6).trim();
+          // data === "[DONE]" means the stream is finished
+          if (data === "[DONE]") return;
+          for (const delta of yieldDelta(data)) yield delta;
         }
       }
     }
+
+    // Flush any event left in the buffer when the stream ends — without
+    // this the final token chunk can be dropped.
+    const rest = buffer.trim();
+    if (rest.startsWith("data: ") && rest.slice(6).trim() !== "[DONE]") {
+      for (const delta of yieldDelta(rest.slice(6).trim())) yield delta;
+    }
+  } finally {
+    reader.releaseLock();
   }
 }
 

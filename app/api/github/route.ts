@@ -15,9 +15,23 @@ export async function GET(req: NextRequest) {
       headers: { 
         Authorization: `Bearer ${token}`,
         Accept: "application/vnd.github+json",
+        "User-Agent": "NEXUS-3D-Agent",
       },
     });
+    if (!res.ok) {
+      return NextResponse.json(
+        { repos: [], message: `GitHub API error: ${res.status} ${res.statusText}` },
+        { status: res.status }
+      );
+    }
     const repos = await res.json();
+    if (!Array.isArray(repos)) {
+      // GitHub error payloads (rate limit, bad token) are objects, not arrays.
+      return NextResponse.json(
+        { repos: [], message: "Unexpected GitHub API response" },
+        { status: 502 }
+      );
+    }
     return NextResponse.json({ repos: repos.slice(0, 10).map((r: any) => ({
       name: r.full_name, url: r.html_url, stars: r.stargazers_count, openPrs: r.open_issues_count
     }))});

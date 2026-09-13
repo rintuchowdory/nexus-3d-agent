@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import type { AgentStatus } from "../../types/agent-events";
@@ -37,6 +37,12 @@ export function AgentCore({ status }: AgentCoreProps) {
       }),
     [color]
   );
+
+  // Dispose the previous material when the status color changes — otherwise
+  // every status transition leaks a GPU material.
+  useEffect(() => {
+    return () => coreMaterial.dispose();
+  }, [coreMaterial]);
 
   useFrame((state) => {
     const t = state.clock.elapsedTime;

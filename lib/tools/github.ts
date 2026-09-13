@@ -42,6 +42,7 @@ export async function analyzeRepository(
 
   const headers: Record<string, string> = {
     Accept: "application/vnd.github+json",
+    "User-Agent": "NEXUS-3D-Agent",
   };
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
@@ -103,6 +104,7 @@ export async function getFileContent(
 ): Promise<string> {
   const headers: Record<string, string> = {
     Accept: "application/vnd.github+json",
+    "User-Agent": "NEXUS-3D-Agent",
   };
   if (token) headers["Authorization"] = `Bearer ${token}`;
 

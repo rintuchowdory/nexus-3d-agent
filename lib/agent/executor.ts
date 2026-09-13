@@ -106,7 +106,10 @@ async function executeTool(
     case "github": {
       const urlMatch = instruction.match(/https?:\/\/github\.com\/[^\s]+/);
       const repoUrl = urlMatch?.[0] || "https://github.com/vercel/next.js";
-      const { info, files } = await analyzeRepository(repoUrl, githubToken);
+      const { info, files } = await analyzeRepository(
+        repoUrl,
+        githubToken || (typeof process !== "undefined" ? process.env.GITHUB_TOKEN : undefined)
+      );
       return {
         summary: `Analyzed ${info.name}: ${info.stars}⭐, ${info.language}`,
         detail: `## Repository: ${info.name}\n${info.description}\n\n- Stars: ${info.stars}\n- Forks: ${info.forks}\n- Language: ${info.language}\n- Open Issues: ${info.openIssues}\n- Default Branch: ${info.defaultBranch}\n\nRoot files: ${files.map((f) => f.name).join(", ")}`,

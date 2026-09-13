@@ -2,17 +2,22 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useAgentStore } from "../../lib/store/agent-store";
-import { executeTask } from "../../lib/agent/executor";
 import { Send, Loader2, Sparkles } from "lucide-react";
 
 export function AgentChat() {
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { messages, addMessage, setStatus, addEvent, setActiveTool, setProcessing, isProcessing, streamingContent, setStreamingContent, updateMetrics, reset } = useAgentStore();
+  const abortRef = useRef<AbortController | null>(null);
+  const { messages, addMessage, updateMessage, setStatus, addEvent, setActiveTool, setProcessing, isProcessing, streamingContent, setStreamingContent, updateMetrics, reset } = useAgentStore();
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, streamingContent]);
+
+  // Abort any in-flight stream when the component unmounts.
+  useEffect(() => {
+    return () => abortRef.current?.abort();
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -28,8 +33,9 @@ export function AgentChat() {
     setProcessing(true);
     setStatus("thinking");
 
-    // Streaming placeholder
     const assistantId = crypto.randomUUID();
+    // Single placeholder that is UPDATED in place when the stream completes —
+    // never append a second message (that left a ghost bubble + duplicate key).
     addMessage({
       id: assistantId,
       role: "assistant",
@@ -37,53 +43,160 @@ export function AgentChat() {
       streaming: true,
     });
 
-    try {
-      const result = await executeTask(userMsg.content);
+    addEvent({
+      id: crypto.randomUUID(),
+      type: "plan",
+      message: "Analyzing instruction and creating execution plan",
+      timestamp: Date.now(),
+      status: "completed",
+      duration: 5,
+    });
 
-      // Simulate streaming the response
-      const words = result.response.split(" ");
-      let streamed = "";
-      for (let i = 0; i < words.length; i++) {
-        streamed += (i > 0 ? " " : "") + words[i];
-        setStreamingContent(streamed);
-        await new Promise((r) => setTimeout(r, 20));
+    const startTime = Date.now();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    try {
+      const res = await fetch("/api/agent/stream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: userMsg.content }),
+        signal: controller.signal,
+      });
+
+      if (!res.ok || !res.body) {
+        let detail = `Request failed (${res.status})`;
+        try {
+          const j = await res.json();
+          if (j?.error) detail = j.error;
+        } catch { /* keep default */ }
+        throw new Error(detail);
       }
 
-      // Update events
-      for (const event of result.events) {
-        addEvent(event);
-        if (event.tool) {
-          setActiveTool(event.tool);
-          setStatus("tool_call");
-          await new Promise((r) => setTimeout(r, 200));
+      // Parse the SSE stream: lines starting with "data: ".
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let full = "";
+      let streamed = "";
+      let routes: Array<{ tool: string; action: string; priority: number }> = [];
+
+      const toolCallIds = new Map<string, string>();
+
+      const handleEvent = (data: string) => {
+        if (data === "[DONE]") return;
+        let ev: {
+          type?: string;
+          content?: string;
+          response?: string;
+          message?: string;
+          routes?: Array<{ tool: string; action: string; priority: number }>;
+        };
+        try {
+          ev = JSON.parse(data);
+        } catch {
+          return;
+        }
+        switch (ev.type) {
+          case "routes":
+            routes = ev.routes ?? [];
+            for (const route of routes) {
+              const evId = crypto.randomUUID();
+              toolCallIds.set(route.tool, evId);
+              setActiveTool(route.tool as never);
+              setStatus("tool_call");
+              addEvent({
+                id: evId,
+                type: "tool_call",
+                tool: route.tool as never,
+                message: `${route.action}...`,
+                timestamp: Date.now(),
+                status: "active",
+              });
+            }
+            break;
+          case "token":
+            streamed += ev.content ?? "";
+            full = streamed;
+            setStreamingContent(streamed);
+            break;
+          case "complete":
+            full = ev.response ?? streamed;
+            break;
+          case "error":
+            throw new Error(ev.message || "Agent error");
+        }
+      };
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split("\n\n");
+        buffer = parts.pop() ?? "";
+        for (const part of parts) {
+          for (const line of part.split("\n")) {
+            if (line.startsWith("data: ")) handleEvent(line.slice(6));
+          }
+        }
+      }
+      // Flush any trailing buffered event.
+      if (buffer.trim().startsWith("data: ")) handleEvent(buffer.trim().slice(6));
+
+      if (!full) {
+        throw new Error("The agent returned an empty response. Check that GROQ_API_KEY is valid.");
+      }
+
+      // Close out tool events from the routes.
+      for (const route of routes) {
+        const evId = toolCallIds.get(route.tool);
+        if (evId) {
+          addEvent({
+            id: evId,
+            type: "tool_result",
+            tool: route.tool as never,
+            message: `${route.action} completed`,
+            timestamp: Date.now(),
+            status: "completed",
+            duration: Math.max(1, Date.now() - startTime),
+          });
         }
       }
 
-      setStatus("success");
-      setActiveTool(null);
-      updateMetrics({
-        responseTime: result.metrics.totalTime,
-        tokens: result.metrics.tokensEstimate,
-        cost: result.metrics.tokensEstimate * 0.00001,
+      addEvent({
+        id: crypto.randomUUID(),
+        type: "complete",
+        message: "Task completed",
+        timestamp: Date.now(),
+        status: "completed",
+        duration: Date.now() - startTime,
       });
 
-      // Finalize message
-      addMessage({
-        id: assistantId,
-        role: "assistant",
-        content: result.response,
-        events: result.events,
+      // Finalize the placeholder in place.
+      updateMessage(assistantId, { content: full, streaming: false });
+
+      const tokensEstimate = Math.max(1, Math.floor(full.length / 4));
+      updateMetrics({
+        responseTime: Date.now() - startTime,
+        tokens: tokensEstimate,
+        cost: tokensEstimate * 0.00001,
       });
+      setStatus("success");
+      setActiveTool(null);
     } catch (err) {
-      setStatus("error");
-      addMessage({
-        id: assistantId,
-        role: "assistant",
-        content: `Error: ${(err as Error).message}`,
-      });
+      if ((err as Error).name === "AbortError") {
+        updateMessage(assistantId, { content: "⏹ Response aborted.", streaming: false });
+      } else {
+        setStatus("error");
+        updateMessage(assistantId, {
+          content: `⚠️ ${(err as Error).message}`,
+          streaming: false,
+        });
+      }
     } finally {
       setStreamingContent("");
       setProcessing(false);
+      abortRef.current = null;
       setTimeout(() => setStatus("idle"), 2000);
     }
   }
@@ -112,7 +225,7 @@ export function AgentChat() {
               Enter a task instruction to begin.
             </p>
             <p className="text-nexus-muted text-xs mt-2">
-              Try: "Check my GitHub repo, find errors, improve Docker config"
+              Try: &quot;Check my GitHub repo, find errors, improve Docker config&quot;
             </p>
           </div>
         )}

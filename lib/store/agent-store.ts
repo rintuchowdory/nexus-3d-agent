@@ -21,6 +21,7 @@ interface AgentState {
   setActiveTool: (t: ToolType | null) => void;
   updateMetrics: (m: Partial<PerformanceMetrics>) => void;
   addMessage: (m: ChatMessage) => void;
+  updateMessage: (id: string, patch: Partial<ChatMessage>) => void;
   setStreamingContent: (c: string) => void;
   setProcessing: (p: boolean) => void;
   reset: () => void;
@@ -66,7 +67,21 @@ export const useAgentStore = create<AgentState>((set) => ({
   updateMetrics: (m) =>
     set((state) => ({ metrics: { ...state.metrics, ...m } })),
   addMessage: (m) =>
-    set((state) => ({ messages: [...state.messages, m] })),
+    set((state) => {
+      // Upsert: finalizing a streaming placeholder reuses its id — appending
+      // blindly created ghost bubbles and duplicate React keys.
+      const index = state.messages.findIndex((msg) => msg.id === m.id);
+      if (index !== -1) {
+        const messages = [...state.messages];
+        messages[index] = { ...messages[index], ...m };
+        return { messages };
+      }
+      return { messages: [...state.messages, m] };
+    }),
+  updateMessage: (id, patch) =>
+    set((state) => ({
+      messages: state.messages.map((m) => (m.id === id ? { ...m, ...patch } : m)),
+    })),
   setStreamingContent: (c) => set({ streamingContent: c }),
   setProcessing: (p) => set({ isProcessing: p }),
   reset: () =>
