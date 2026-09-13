@@ -6,7 +6,7 @@ import { ExecutionTimeline } from "../../components/dashboard/ExecutionTimeline"
 import { PerformanceCards } from "../../components/dashboard/PerformanceCards";
 import { StatusBar } from "../../components/dashboard/StatusBar";
 import { UsageChart } from "../../components/dashboard/UsageChart";
-import { Suspense } from "react";
+
 
 // Dynamically import 3D scene to avoid SSR issues
 const AgentScene = dynamic(

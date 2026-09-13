@@ -180,6 +180,7 @@ export function AgentChat() {
         responseTime: Date.now() - startTime,
         tokens: tokensEstimate,
         cost: tokensEstimate * 0.00001,
+        completedTasks: useAgentStore.getState().metrics.completedTasks + 1,
       });
       setStatus("success");
       setActiveTool(null);
@@ -191,6 +192,9 @@ export function AgentChat() {
         updateMessage(assistantId, {
           content: `⚠️ ${(err as Error).message}`,
           streaming: false,
+        });
+        updateMetrics({
+          failedTasks: useAgentStore.getState().metrics.failedTasks + 1,
         });
       }
     } finally {
